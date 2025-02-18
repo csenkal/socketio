@@ -46,14 +46,18 @@ async function random(req, res) {
     
 }
 
-server.get("/random", (req, res) => {
-    random(req, res)
-});
+server.get("/random", function (req, res, next) {
+    random(req, res);
+    return next();
+  });
 
-//server.get("/random", (req, res) => res.send({ value: (Math.random() * 1000).toFixed(0)} ));
+
 
 // serve client-side socket.io script
-server.get("/socket.io.js", (req, res) => fs.createReadStream(PATH_TO_CLIENT_SIDE_SOCKET_IO_SCRIPT).pipe(res));
+server.get("/socket.io.js", function (req, res, next) {
+    fs.createReadStream(PATH_TO_CLIENT_SIDE_SOCKET_IO_SCRIPT).pipe(res)
+    return next();
+});
 
 // serve static files under /public
 server.get("/*", restify.plugins.serveStatic({
