@@ -12,6 +12,7 @@ import restify from "restify";
 import fs from "fs"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import path from 'path'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,7 +30,7 @@ const clientsOnline = new Set();
 
 
 // sample api that generates random numbers
-async function random(req, res) {
+async function random(req, res, next) {
    var rnd;
    try {
     const responses = await io.timeout(2000).emitWithAck("random");
@@ -43,27 +44,43 @@ async function random(req, res) {
    res.send({ value: rnd });
     //console.log('random sent')
     
-    
+    return next();
 }
 
 server.get("/random", function (req, res, next) {
-    random(req, res);
-    return next();
+    return random(req, res, next);
+    
   });
 
 
 
 // serve client-side socket.io script
-server.get("/socket.io.js", function (req, res, next) {
-    fs.createReadStream(PATH_TO_CLIENT_SIDE_SOCKET_IO_SCRIPT).pipe(res)
-    return next();
+server.get('/socket.io.js', restify.plugins.serveStatic({
+    directory: path.join(__dirname, 'node_modules', 'socket.io', 'client-dist'),
+    file: 'socket.io.min.js'
+  }));
+
+server.get('/', function indexHTML(req, res, next) {
+    fs.readFile(__dirname + '/public/index.html', function (err, data) {
+        if (err) {
+            next(err);
+            return;
+        }
+
+        res.setHeader('Content-Type', 'text/html');
+        res.writeHead(200);
+        res.end(data);
+        next();
+    });
 });
 
 // serve static files under /public
+/*
 server.get("/*", restify.plugins.serveStatic({
     directory: __dirname + "/public",
     default: "index.html",
 }));
+*/
 
 // handle socket.io clients connecting to us
 io.sockets.on("connect", socket => {
