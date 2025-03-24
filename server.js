@@ -219,10 +219,11 @@ async function leaveDelete(req, res, next) {
 
 // Mentor interns by term işlemleri
 async function mentorInternsByTerm(req, res, next) {
+    var respones;
     try {
         const { id } = req.params;
         const { internshipId } = req.query;
-        const responses = await io.timeout(2000).emitWithAck("mentorConnection:getFiltered", { id, internshipId });
+        responses = await io.timeout(2000).emitWithAck("mentorConnection:getFiltered", { id, internshipId });
         console.log('Received responses:', JSON.stringify(responses, null, 2));
         res.json({
             success: true,
