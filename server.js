@@ -219,7 +219,7 @@ async function leaveDelete(req, res, next) {
 
 // Mentor interns by term işlemleri
 async function mentorInternsByTerm(req, res, next) {
-    var respones;
+    var respones="res";
     try {
         const { id } = req.params;
         const { internshipId } = req.query;
