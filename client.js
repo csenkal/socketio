@@ -10,14 +10,9 @@ const customAgent = new https.Agent({
 });
 
 
-const socket = io('https://socketio-with-restify.onrender.com', {
-
-    extraHeaders: customHeaders,
-    agent: customAgent
-});
 
 
-//const socket = io('http://127.0.0.1:8000')
+
 
 socket.on('connect', () => {
     console.log('Connected to the server');
@@ -31,12 +26,14 @@ socket.on('connect', () => {
 
 socket.on("server-time", severTime => console.log(severTime));
 
-socket.on("random", (cb) => {
-    console.log('Random request received');
-    //socket.emit("randomResponse",{ value: (Math.random() * 1000).toFixed(0)});
-    var rnd = (Math.random() * 1000).toFixed(0);
-    cb(rnd);
-    console.log('Random response sent: ' , rnd);
+// socket.on("login", (cb) => {
+//     console.log('Received message:', cb());
+// });
+
+socket.on("login", (data, callback) => {
+    console.log('Received login data:', data);
+    // Sunucuya yanıt gönder
+    callback({ message: 'Acknowledged', receivedData: data });
 });
 
 socket.on('disconnect', () => {
