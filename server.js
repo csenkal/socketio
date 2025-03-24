@@ -231,8 +231,8 @@ async function mentorInternsByTerm(req, res, next) {
     } catch (error) {
         console.error('Error or timeout:', error);
         res.json({
-            success: false,
-            message: "Error or timeout: " + error
+            success: true,
+            data: responses
         });
     }
     return next();
@@ -307,6 +307,10 @@ server.get("/mentorInternsByTerm/:id", function (req, res, next) {
 
 
 server.get("/internship/getAll", function (req, res, next) {
+    return internshipGetAll(req, res, next);
+});
+
+server.get("/hello", function (req, res, next) {
     return internshipGetAll(req, res, next);
 });
 
