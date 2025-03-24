@@ -10,8 +10,10 @@ const customAgent = new https.Agent({
 });
 
 
-
-
+const socket = io('https://socketio-with-restify.onrender.com', {
+    extraHeaders: customHeaders,
+    agent: customAgent
+});
 
 
 socket.on('connect', () => {
