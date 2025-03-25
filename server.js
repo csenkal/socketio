@@ -343,7 +343,23 @@ server.get("/*", restify.plugins.serveStatic({
     default: "index.html",
 }));
 */
+io.use((socket, next) => {
+    const clientID = socket.handshake.auth.clientID; // Extract clientID from handshake auth data
+    
+    if (isValidClientID(clientID)) { // Replace with your validation logic
+      next(); // Allow the client to connect
+    } else {
+      console.log(`Connection denied for client: ${socket.id}`);
+      const err = new Error('Invalid clientID'); // Custom error message
+      err.data = { reason: 'Invalid clientID' }; // Additional error details if needed
+      next(err); // Deny connection
+    }
+  });
 
+  function isValidClientID(clientID) {
+    const allowedClientIDs = ['0195cdb1-950b-7b2b-9827-f41275575743']; // Example: List of allowed clientIDs
+    return allowedClientIDs.includes(clientID); // Check if clientID is in the list
+  }
 // handle socket.io clients connecting to us
 io.sockets.on("connect", socket => {
     clientsOnline.add(socket);

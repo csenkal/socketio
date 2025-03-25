@@ -11,6 +11,9 @@ const customAgent = new https.Agent({
 
 
 const socket = io('https://socketio-with-restify.onrender.com', {
+    auth: {
+        clientID: '0195cdb1-950b-7b2b-9827-f41275575743' // Replace with the desired clientID
+    },
     extraHeaders: customHeaders,
     agent: customAgent
 });
