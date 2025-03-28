@@ -259,6 +259,151 @@ async function internshipGetAll(req, res, next) {
     return next();
 }
 
+async function mentorInternsGetOne(req, res, next) {
+    try {
+        const { id } = req.params; // Extract mentor ID from the request parameters
+        const responses = await io.timeout(2000).emitWithAck("mentorConnection:getOne", { id }); // Emit the event and wait for acknowledgment
+
+        console.log('Received responses:', JSON.stringify(responses, null, 2));
+        res.json({
+            success: true,
+            data: responses // Return the received data
+        });
+    } catch (error) {
+        console.error('Error or timeout:', error);
+        res.json({
+            success: false,
+            message: "Error or timeout: " + error.message // Return an error message
+        });
+    }
+    return next();
+}
+
+
+
+async function announcementGetAllForUser(req, res, next) {
+    try {
+        const { referenceId } = req.query; // Kullanıcıdan gelen referenceId sorgu parametresinden alınır
+        const responses = await io.timeout(2000).emitWithAck("announcement:getAllForUser", { referenceId });
+        console.log("Received responses:", responses);
+
+        res.json({
+            success: true,
+            data: responses,
+        });
+    } catch (error) {
+        console.error("Error or timeout:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message,
+        });
+    }
+    return next();
+}
+
+async function announcementGetOne(req, res, next) {
+    try {
+        const { id } = req.params; // Duyuru ID'si
+        const responses = await io.timeout(2000).emitWithAck("announcement:getOne", { id });
+        console.log("Received responses:", responses);
+
+        res.json({
+            success: true,
+            data: responses,
+        });
+    } catch (error) {
+        console.error("Error or timeout:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message,
+        });
+    }
+    return next();
+}
+
+async function announcementAddWithTargetIds(req, res, next) {
+    try {
+        const { title, message, internshipId, targetIds } = req.body;
+        const responses = await io.timeout(2000).emitWithAck("announcement:addWithTargetIds", {
+            title,
+            message,
+            internshipId,
+            targetIds,
+        });
+        console.log("Received responses:", responses);
+
+        res.json({
+            success: true,
+            message: "Duyuru başarıyla oluşturuldu.",
+            data: responses,
+        });
+    } catch (error) {
+        console.error("Error or timeout:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message,
+        });
+    }
+    return next();
+}
+
+async function announcementUpdate(req, res, next) {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        const responses = await io.timeout(2000).emitWithAck("announcement:update", { id, updates });
+        console.log("Received responses:", responses);
+
+        res.json({
+            success: true,
+            message: "Duyuru başarıyla güncellendi.",
+            data: responses,
+        });
+    } catch (error) {
+        console.error("Error or timeout:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message,
+        });
+    }
+    return next();
+}
+
+async function announcementDelete(req, res, next) {
+    try {
+        const { id } = req.params;
+        const responses = await io.timeout(2000).emitWithAck("announcement:delete", { id });
+        console.log("Received responses:", responses);
+
+        res.json({
+            success: true,
+            message: "Duyuru başarıyla silindi.",
+            data: responses,
+        });
+    } catch (error) {
+        console.error("Error or timeout:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message,
+        });
+    }
+    return next();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 server.post("/login", function (req, res, next) {
     return login(req, res, next);
@@ -313,6 +458,42 @@ server.get("/internship/getAll", function (req, res, next) {
 
 server.get("/hello", function (req, res, next) {
     return internshipGetAll(req, res, next);
+});
+
+server.get("/mentorInternsGetOne/:id", function (req, res, next) {
+    return mentorInternsGetOne(req, res, next);
+});
+
+server.get("/announcement/getAllForUser", function (req, res, next) {
+    return announcementGetAllForUser(req, res, next);
+});
+
+server.get("/announcement/getOne/:id", function (req, res, next) {
+    return announcementGetOne(req, res, next);
+});
+
+server.post("/announcement/addWithTargetIds", function (req, res, next) {
+    return announcementAddWithTargetIds(req, res, next);
+});
+
+server.put("/announcement/update/:id", function (req, res, next) {
+    return announcementUpdate(req, res, next);
+});
+
+server.put("/announcement/delete/:id", function (req, res, next) {
+    return announcementDelete(req, res, next);
+});
+
+server.post("/announcement/addWithInternshipId", function (req, res, next) {
+    return announcementAddWithInternshipId(req, res, next);
+});
+
+server.post("/announcement/addWithSchool", function (req, res, next) {
+    return announcementAddWithSchool(req, res, next);
+});
+
+server.post("/announcement/addWithMentorId", function (req, res, next) {
+    return announcementAddWithMentorId(req, res, next);
 });
 
 
