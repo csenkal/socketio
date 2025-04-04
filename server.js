@@ -112,15 +112,25 @@ async function leaveAdd(req, res, next) {
 async function leaveGetAll(req, res) {
     try {
         // Emit ile 'leave:getAll' olayını tetikleyip, cevap bekliyoruz
-        const responses = await io.timeout(2000).emitWithAck("leave:getAll");
+        const responses = await io.timeout(200000).emitWithAck("leave:getAll");
+        console.log('Received cevaplar:', responses);
 
+        if (!responses || responses.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Hiçbir izin talebi bulunamadı."
+            });
+        }
+        //console.log('Ress:', res);
+        
         // Gelen yanıtları kontrol ediyor ve yanıtı döndürüyoruz
         console.log('Received responses:', responses);
-        return res.status(200).json({
+        res.send(200, {
             success: true,
             message: "Tüm izin talepleri başarıyla getirildi.",
-            data: responses // Data başarıyla döndürülüyor
+            data: responses[0].data
         });
+
     } catch (error) {
         // Eğer hata oluşursa, burada loglanıyor ve istemciye hata mesajı gönderiliyor
         console.error('Error or timeout:', error);
@@ -244,16 +254,20 @@ async function internshipGetAll(req, res, next) {
     try {
         const responses = await io.timeout(2000000).emitWithAck("internship:getAll");
         console.log('Received responses:', JSON.stringify(responses, null, 2));
-        res.json({
+        
+        // Başarılı yanıtları gönder
+        res.send({
             success: true,
             data: responses
         });
     } catch (error) {
         console.error('Error or timeout:', error);
-        res.json({
+        
+        // Hata mesajlarını gönder
+        res.send({
             success: false,
             message: "Error or timeout: " + error,
-            error : error
+            error: error
         });
     }
     return next();
@@ -472,10 +486,6 @@ server.get("/announcement/getOne/:id", function (req, res, next) {
     return announcementGetOne(req, res, next);
 });
 
-server.post("/announcement/addWithTargetIds", function (req, res, next) {
-    return announcementAddWithTargetIds(req, res, next);
-});
-
 server.put("/announcement/update/:id", function (req, res, next) {
     return announcementUpdate(req, res, next);
 });
@@ -484,18 +494,21 @@ server.put("/announcement/delete/:id", function (req, res, next) {
     return announcementDelete(req, res, next);
 });
 
-server.post("/announcement/addWithInternshipId", function (req, res, next) {
-    return announcementAddWithInternshipId(req, res, next);
-});
+// server.post("/announcement/addWithInternshipId", function (req, res, next) {
+//     return announcementAddWithInternshipId(req, res, next);
+// });
 
-server.post("/announcement/addWithSchool", function (req, res, next) {
-    return announcementAddWithSchool(req, res, next);
-});
+// server.post("/announcement/addWithSchool", function (req, res, next) {
+//     return announcementAddWithSchool(req, res, next);
+// });
 
-server.post("/announcement/addWithMentorId", function (req, res, next) {
-    return announcementAddWithMentorId(req, res, next);
-});
+// server.post("/announcement/addWithMentorId", function (req, res, next) {
+//     return announcementAddWithMentorId(req, res, next);
+// });
 
+// server.post("/announcement/addWithTargetIds", function (req, res, next) {
+//     return announcementAddWithTargetIds(req, res, next);
+// });
 
 // serve client-side socket.io script
 server.get('/socket.io.js', restify.plugins.serveStatic({
