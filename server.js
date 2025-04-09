@@ -13,8 +13,10 @@ import fs from "fs"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path'
+//import { verifyToken, verifyTokenAndRole } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
+
 const __dirname = dirname(__filename);
 
 
@@ -30,28 +32,31 @@ const clientsOnline = new Set();
 
 // Body parser eklentisini kullanarak gelen JSON verilerini ayrıştırın
 server.use(restify.plugins.bodyParser());
-
-
+//server.use(verifyToken)
 
 async function login(req, res, next) {
     try {
         const { email, password } = req.body; // İstekten e-posta ve şifre bilgilerini al
         const responses = await io.timeout(2000).emitWithAck("login", { email, password }); // tüm istemcilerde login olayını tetikler. her bir istemciden onay bekler.
         console.log('Received responses:', responses);
+
+        // Başarılı yanıt gönderiliyor
         res.json({
             success: true,
             data: responses
         });
-
+        return next(); // Fonksiyon burada sonlanır
     } catch (error) {
         console.error('Error or timeout:', error);
+
+        // Hata durumunda yanıt gönderiliyor
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message
+        });
+        return next(); // Fonksiyon burada sonlanır
     }
-    res.send({ value: req.body });
-    return next();
 }
-
-
-
 
 async function changePassword(req, res, next) {
     try {
@@ -86,7 +91,6 @@ async function logout(req, res, next) {
     return next();
 }
 
-
 // Leave işlemleri
 async function leaveAdd(req, res, next) {
     try {
@@ -111,20 +115,16 @@ async function leaveAdd(req, res, next) {
 
 async function leaveGetAll(req, res) {
     try {
-        // Emit ile 'leave:getAll' olayını tetikleyip, cevap bekliyoruz
         const responses = await io.timeout(200000).emitWithAck("leave:getAll");
         console.log('Received cevaplar:', responses);
 
         if (!responses || responses.length === 0) {
-            return res.status(404).json({
+            return res.send(404, {
                 success: false,
                 message: "Hiçbir izin talebi bulunamadı."
             });
         }
-        //console.log('Ress:', res);
-        
-        // Gelen yanıtları kontrol ediyor ve yanıtı döndürüyoruz
-        console.log('Received responses:', responses);
+
         res.send(200, {
             success: true,
             message: "Tüm izin talepleri başarıyla getirildi.",
@@ -132,19 +132,20 @@ async function leaveGetAll(req, res) {
         });
 
     } catch (error) {
-        // Eğer hata oluşursa, burada loglanıyor ve istemciye hata mesajı gönderiliyor
         console.error('Error or timeout:', error);
-        return res.status(500).json({
+        return res.send(500, {
             success: false,
             message: "İzin talepleri getirilemedi: " + error.message
         });
     }
 }
 
+
 async function leaveGetAllFromIntern(req, res, next) {
     try {
-        const { id } = req.params;
-        const responses = await io.timeout(2000).emitWithAck("leave:getAllFromIntern", { id });
+
+        const token = req.headers.authorization?.split(" ")[1];
+        const responses = await io.timeout(2000).emitWithAck("leave:getAllFromIntern", { token });
 
         console.log('Received responses:', responses);
         res.json({
@@ -162,10 +163,11 @@ async function leaveGetAllFromIntern(req, res, next) {
     return next();
 }
 
+
 async function leaveGetAllForMentor(req, res, next) {
     try {
-        const { id } = req.params;
-        const responses = await io.timeout(2000).emitWithAck("leave:getAllForMentor", { id });
+        const token = req.headers.authorization?.split(" ")[1];
+        const responses = await io.timeout(2000).emitWithAck("leave:getAllForMentor", { token });
 
         console.log('Received responses:', JSON.stringify(responses, null, 2));
         res.json({
@@ -182,6 +184,7 @@ async function leaveGetAllForMentor(req, res, next) {
     }
     return next();
 }
+
 
 async function leaveUpdate(req, res, next) {
     try {
@@ -204,6 +207,7 @@ async function leaveUpdate(req, res, next) {
     }
     return next();
 }
+
 
 async function leaveDelete(req, res, next) {
     try {
@@ -273,6 +277,7 @@ async function internshipGetAll(req, res, next) {
     return next();
 }
 
+
 async function mentorInternsGetOne(req, res, next) {
     try {
         const { id } = req.params; // Extract mentor ID from the request parameters
@@ -295,10 +300,11 @@ async function mentorInternsGetOne(req, res, next) {
 
 
 
+// Duyuru işlemleri
 async function announcementGetAllForUser(req, res, next) {
     try {
-        const { referenceId } = req.query; // Kullanıcıdan gelen referenceId sorgu parametresinden alınır
-        const responses = await io.timeout(2000).emitWithAck("announcement:getAllForUser", { referenceId });
+        const token = req.headers.authorization?.split(" ")[1];
+        const responses = await io.timeout(2000).emitWithAck("announcement:getAllForUser", { token });
         console.log("Received responses:", responses);
 
         res.json({
@@ -334,6 +340,7 @@ async function announcementGetOne(req, res, next) {
     }
     return next();
 }
+
 
 async function announcementAddWithTargetIds(req, res, next) {
     try {
@@ -383,6 +390,7 @@ async function announcementUpdate(req, res, next) {
     return next();
 }
 
+
 async function announcementDelete(req, res, next) {
     try {
         const { id } = req.params;
@@ -405,11 +413,84 @@ async function announcementDelete(req, res, next) {
 }
 
 
+async function InternsByTerm(req, res, next) {
+    try {
+        const { id } = req.params; // Extract the internship ID from the request parameters
+        const responses = await io.timeout(2000).emitWithAck("internship:getAllInternsByTerms", { id }); // Emit the event and wait for acknowledgment
 
+        console.log('Received responses:', JSON.stringify(responses, null, 2));
 
+        if (!responses || responses.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No interns found for the specified term."
+            });
+        }
 
+        res.json({
+            success: true,
+            message: "Interns for the specified term retrieved successfully.",
+            data: responses // Return the received data
+        });
+    } catch (error) {
+        console.error('Error or timeout:', error);
+        res.status(500).json({
+            success: false,
+            message: "Error or timeout: " + error.message // Return an error message
+        });
+    }
+    return next();
+}
 
+async function refreshToken(req, res) {
+    try {
+        const { authorization } = req.headers; // Authorization header'dan token alınır
+        const refreshToken = authorization && authorization.split(' ')[1]; // Bearer token formatından ayrıştırılır
 
+        if (!refreshToken) {
+            return res.send(401, {
+                success: false,
+                message: "Refresh token bulunamadı."
+            });
+        }
+
+        // Refresh token doğrulama
+        const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        // Yeni access token oluşturma
+        const newAccessToken = jwt.sign(
+            {
+                accountId: decodedToken.accountId,
+                referenceId: decodedToken.referenceId,
+                email: decodedToken.email,
+                role: decodedToken.role
+            },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: process.env.ACCESS_EXPIRES_IN }
+        );
+
+        console.log("Yeni access token oluşturuldu:", newAccessToken);
+
+        return res.send(200, {
+            success: true,
+            accessToken: newAccessToken
+        });
+    } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            console.error("Refresh token doğrulama hatası:", error);
+            return res.send(403, {
+                success: false,
+                message: "Geçersiz veya süresi dolmuş refresh token."
+            });
+        }
+
+        console.error("Refresh token işlemi sırasında bir hata oluştu:", error);
+        return res.send(500, {
+            success: false,
+            message: "Sunucu hatası: " + error.message
+        });
+    }
+}
 
 
 
@@ -424,7 +505,9 @@ server.post("/login", function (req, res, next) {
 
 });
 
-
+server.post("/refreshtoken", function (req, res, next) {
+    return refreshToken(req, res, next);
+});
 
 server.post("/change-password", function (req, res, next) {
     return changePassword(req, res, next);
@@ -460,7 +543,6 @@ server.put("/leave/delete/:id", function (req, res, next) {
     return leaveDelete(req, res, next);
 });
 
-
 server.get("/mentorInternsByTerm/:id", function (req, res, next) {
      return mentorInternsByTerm(req, res, next); 
 });
@@ -492,6 +574,22 @@ server.put("/announcement/update/:id", function (req, res, next) {
 
 server.put("/announcement/delete/:id", function (req, res, next) {
     return announcementDelete(req, res, next);
+});
+
+server.get("/InternsByTerm/:id", function (req, res, next) {
+    return InternsByTerm(req, res, next);
+});
+
+server.get("/survey/getAllForUser", function (req, res, next) {
+    return surveyGetAllForUser(req, res, next);
+});
+
+server.post("/survey/answerAdd", function (req, res, next) {
+    return answerAdd(req, res, next);
+});
+
+server.get("/survey/getOne/:id", function (req, res, next) {
+    return surveyGetOne(req, res, next);
 });
 
 // server.post("/announcement/addWithInternshipId", function (req, res, next) {
