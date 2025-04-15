@@ -94,8 +94,9 @@ async function logout(req, res, next) {
 // Leave işlemleri
 async function leaveAdd(req, res, next) {
     try {
-        const { internId, start, end, description } = req.body;
-        const responses = await io.timeout(20000).emitWithAck("leave:add", { internId, start, end, description });
+        const token = req.headers.authorization?.split(" ")[1];
+        const { start, end, description } = req.body;
+        const responses = await io.timeout(20000).emitWithAck("leave:add", { token , start, end, description });
 
         console.log('Received responses:', responses);
         res.json({
@@ -600,15 +601,9 @@ async function getLeaveCountByMentor(req, res, next) {
 
 
 
-
-
-
-
-
-
+//Auth-------------------------------------------------------------------------------
 server.post("/login", function (req, res, next) {
     return login(req, res, next);
-
 });
 
 server.post("/refreshtoken", function (req, res, next) {
@@ -619,12 +614,42 @@ server.post("/change-password", function (req, res, next) {
     return changePassword(req, res, next);
 });
 
-
 server.post("/logout", function (req, res, next) {
     return logout(req, res, next);
 });
 
+//Connection-------------------------------------------------------------------------
+server.get("/mentorInternsGetOne/:id", function (req, res, next) {
+    return mentorInternsGetOne(req, res, next);
+});
 
+server.get("/mentorInternsByTerm/:id", function (req, res, next) {
+    return mentorInternsByTerm(req, res, next); 
+});
+
+server.get("/InternsByTerm/:id", function (req, res, next) {
+    return InternsByTerm(req, res, next);
+});
+
+//Internship-------------------------------------------------------------------------
+server.get("/internship/getAll", function (req, res, next) {
+    return internshipGetAll(req, res, next);
+});
+
+//Survey-----------------------------------------------------------------------------
+server.get("/survey/getAllForUser", function (req, res, next) {
+    return surveyGetAllForUser(req, res, next);
+});
+
+server.post("/survey/answerAdd", function (req, res, next) {
+    return answerAdd(req, res, next);
+});
+
+server.get("/survey/getOne/:id", function (req, res, next) {
+    return surveyGetOne(req, res, next);
+});
+
+//Leave------------------------------------------------------------------------------
 server.post("/leave/add", function (req, res, next) {
     return leaveAdd(req, res, next);
 });
@@ -633,11 +658,11 @@ server.get("/leave/getAll", function (req, res, next) {
     return leaveGetAll(req, res, next);
 });
 
-server.get("/leave/getAllFromIntern/:id", function (req, res, next) {
+server.get("/leave/getAllFromIntern", function (req, res, next) {
     return leaveGetAllFromIntern(req, res, next);
 });
 
-server.get("/leave/getAllForMentor/:id", function (req, res, next) {
+server.get("/leave/getAllForMentor", function (req, res, next) {
     return leaveGetAllForMentor(req, res, next);
 });
 
@@ -649,22 +674,7 @@ server.put("/leave/delete/:id", function (req, res, next) {
     return leaveDelete(req, res, next);
 });
 
-server.get("/mentorInternsByTerm/:id", function (req, res, next) {
-     return mentorInternsByTerm(req, res, next); 
-});
-
-
-server.get("/internship/getAll", function (req, res, next) {
-    return internshipGetAll(req, res, next);
-});
-
-server.get("/hello", function (req, res, next) {
-    return internshipGetAll(req, res, next);
-});
-
-server.get("/mentorInternsGetOne/:id", function (req, res, next) {
-    return mentorInternsGetOne(req, res, next);
-});
+//Announcement-----------------------------------------------------------------------
 
 server.get("/announcement/getAllForUser", function (req, res, next) {
     return announcementGetAllForUser(req, res, next);
@@ -681,38 +691,6 @@ server.put("/announcement/update/:id", function (req, res, next) {
 server.put("/announcement/delete/:id", function (req, res, next) {
     return announcementDelete(req, res, next);
 });
-
-server.get("/InternsByTerm/:id", function (req, res, next) {
-    return InternsByTerm(req, res, next);
-});
-
-server.get("/survey/getAllForUser", function (req, res, next) {
-    return surveyGetAllForUser(req, res, next);
-});
-
-server.post("/survey/answerAdd", function (req, res, next) {
-    return answerAdd(req, res, next);
-});
-
-server.get("/survey/getOne/:id", function (req, res, next) {
-    return surveyGetOne(req, res, next);
-});
-
-// server.post("/announcement/addWithInternshipId", function (req, res, next) {
-//     return announcementAddWithInternshipId(req, res, next);
-// });
-
-// server.post("/announcement/addWithSchool", function (req, res, next) {
-//     return announcementAddWithSchool(req, res, next);
-// });
-
-// server.post("/announcement/addWithMentorId", function (req, res, next) {
-//     return announcementAddWithMentorId(req, res, next);
-// });
-
-// server.post("/announcement/addWithTargetIds", function (req, res, next) {
-//     return announcementAddWithTargetIds(req, res, next);
-// });
 
 //Profile----------------------------------------------------------------------------
 server.get("/profile/getProfile", function (req, res, next) {
