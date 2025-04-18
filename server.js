@@ -100,6 +100,20 @@ io.sockets.on("connect", socket => {
     clientsOnline.add(socket);
     io.emit("clients-online", clientsOnline.size);
 
+    socket.on('send-notification', (notificationData, callback) => {
+        console.log('Bildirim alındı:', notificationData);
+
+        try {
+            // Bildirimi işlemek için sendNotification fonksiyonunu çağır
+            sendNotification(notificationData, callback);
+        } catch (error) {
+            // Hata durumunda geri dönüş yap
+            callback({
+                success: false,
+                message: error.message
+            });
+        }
+    });
 
     socket.on('message', (msg) => {
         console.log('Message received:', msg);
