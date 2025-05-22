@@ -15,14 +15,21 @@ export async function getProfile(req, res) {
         const response = await io.timeout(2000000).emitWithAck("profile:getProfile", { token });
 
         console.log("Received response:", JSON.stringify(response, null, 2));
-        res.send(response[0]);
+        res.send({
+            success: response[0].success,
+            message: response[0].success ? "Profil başarıyla getirildi" : "Profil alınamadı",
+            data: response[0].data ?? null
+        });
 
     } catch (error) {
         console.error("Error or timeout:", error);
         res.send({
             success: false,
             message: "Profil alınırken bir hata oluştu: " + error.message,
-            error: error
+            // message'da zaten error sebebi yazıyor
+            //error: error
+            // gelen tüm yanıtları standardize etmek için data eklendi
+            data: null
         });
     }
 }
@@ -36,7 +43,8 @@ export async function getInternCountByMentor(req, res) {
         if (!token) {
             return res.send({
                 success: false,
-                message: "Giriş reddedildi. Hatalı Token."
+                message: "Giriş reddedildi. Hatalı Token.",
+                data: null
             });
         }
 
@@ -49,7 +57,8 @@ export async function getInternCountByMentor(req, res) {
         res.send({
             success: false,
             message: "Stajyer sayısı alınırken bir hata oluştu: " + error.message,
-            error: error
+            error: error,
+            data: null
         });
     }
 }
@@ -62,20 +71,27 @@ export async function getLeaveCountByMentor(req, res) {
         if (!token) {
             return res.send({
                 success: false,
-                message: "Giriş reddedildi. Hatalı Token."
+                message: "Giriş reddedildi. Hatalı Token.",
+                data: null
             });
         }
 
         const response = await io.timeout(2000000).emitWithAck("profile:getLeaveCount", { token });
 
         console.log("Received response:", JSON.stringify(response, null, 2));
-        res.send(response[0]);
+        res.send({
+            success: response[0].success,
+            message: response[0].success ? "başarılı" : "başarısız",
+            data: response[0].data ?? null
+        });
     } catch (error) {
         console.error("Error or timeout:", error);
         res.send({
             success: false,
             message: "İzin talebi sayısı alınırken hata oluştu: " + error.message,
-            error: error
+            // data eklendi
+            data: null
+            //error: error
         });
     }
 }
@@ -89,20 +105,28 @@ export async function getSurveyCountByMentor(req, res) {
         if (!token) {
             return res.send({
                 success: false,
-                message: "Giriş Reddedildi. Hatalı Token."
+                message: "Giriş Reddedildi. Hatalı Token.",
+                data: null
             });
         }
 
         const response = await io.timeout(2000000).emitWithAck("profile:getSurveyCount", { token });
 
         console.log("Received response:", JSON.stringify(response, null, 2));
-        res.send(response[0]);
+        res.send({
+            success: response[0].success,
+            message: response[0].success ? "başarılı" : "başarısız",
+            data: response[0].data ?? null
+        });
+
     } catch (error) {
         console.error("Error or timeout:", error);
         res.send({
             success: false,
             message: "Anketler alınırken bir hata oluştu: " + error.message,
-            error: error
+            // data eklendi
+            data: null
+            //error: error
         });
     }
 }

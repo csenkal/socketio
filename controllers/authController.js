@@ -1,11 +1,11 @@
 import { getSocketIO } from "../utils/socket.js";
-
+import jwt from "jsonwebtoken";
 
 export async function login(req, res) {
     try {
         const io = getSocketIO();
-        const { email, password } = req.body;
-        const responses = await io.timeout(2000).emitWithAck("login", { email, password });
+        const { email, password, fcmToken} = req.body;
+        const responses = await io.timeout(2000).emitWithAck("login", { email, password, fcmToken });
         console.log('Received responses:', responses);
 
         res.send({
@@ -23,23 +23,26 @@ export async function login(req, res) {
 
 export async function logout(req, res) {
     try {
+        const io = getSocketIO();
         const { authorization } = req.headers;
         const refreshToken = authorization && authorization.split(' ')[1];
         const responses = await io.timeout(2000).emitWithAck("logout", { authorization });
         console.log('Received responses:', responses);
 
-        res.json({
+        res.send({
             success: true,
-            message: "Logout successful"
+            message: "Başarıyla çıkış yapıldı."
         });
     } catch (error) {
-        console.error('Error or timeout:', error);
-        res.status(500).json({
+        console.error('Hata meydana geldi: ', error);
+
+        res.send({
             success: false,
-            message: "Error or timeout: " + error.message
+            message: "Hata meydana geldi: " + error.message
         });
     }
 }
+
 
 export async function changePassword(req, res) {
     try {
@@ -65,50 +68,54 @@ export async function changePassword(req, res) {
 
 export async function refreshToken(req, res) {
     try {
-        const { authorization } = req.headers; // Authorization header'dan token alınır
-        const refreshToken = authorization && authorization.split(' ')[1]; // Bearer token formatından ayrıştırılır
+        const io = getSocketIO();
+        const authHeader = req.headers['authorization'];
+        const refreshToken = authHeader && authHeader.split(' ')[1]; 
 
-        if (!refreshToken) {
-            return res.send(401, {
+        const responses = await io.timeout(2000).emitWithAck("refreshtoken", { refreshToken });
+        console.log('Received responses:', responses);
+    
+        if (responses[0]?.status === 401) {
+            res.send({
                 success: false,
-                message: "Refresh token bulunamadı."
+                message: "Refresh token girişi yapılmalıdır!"
             });
+        } else if (responses[0]?.status === 400) {
+            res.send({
+                success: false,
+                message: "Refresh token veritabanında bulunamadı veya geçersiz token gönderildi."
+            });
+        } else if (responses[0]?.status === 403) {
+            res.send({
+                success: false,
+                message: "Süresi dolmuş refresh token."
+            });
+        } else {
+
+            let newAccessToken = Array.isArray(responses) ? responses[0]?.accessToken : responses.newAccessToken;
+    
+            if (!newAccessToken) {
+                res.send({
+                    success: false,
+                    message: "Yeni access token alınamadı."
+                });
+            } else {
+                res.send({
+                    success: true,
+                    message: "Token başarıyla alındı.",
+                    newAccessToken
+                });
+            }
         }
-
-        // Refresh token doğrulama
-        const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-
-        // Yeni access token oluşturma
-        const newAccessToken = jwt.sign(
-            {
-                accountId: decodedToken.accountId,
-                referenceId: decodedToken.referenceId,
-                email: decodedToken.email,
-                role: decodedToken.role
-            },
-            process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: process.env.ACCESS_EXPIRES_IN }
-        );
-
-        console.log("Yeni access token oluşturuldu:", newAccessToken);
-
-        return res.send(200, {
-            success: true,
-            accessToken: newAccessToken
-        });
+        
     } catch (error) {
-        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
-            console.error("Refresh token doğrulama hatası:", error);
-            return res.send(403, {
+        console.error("Refresh token işlemi sırasında bir hata oluştu:", error);
+        if (!res.headersSent) { 
+            res.send({
                 success: false,
-                message: "Geçersiz veya süresi dolmuş refresh token."
+                message: "Sunucu hatası: " + error.message
             });
         }
-
-        console.error("Refresh token işlemi sırasında bir hata oluştu:", error);
-        return res.send(500, {
-            success: false,
-            message: "Sunucu hatası: " + error.message
-        });
     }
 }
+

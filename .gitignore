@@ -1,4 +1,4 @@
 
 /node_modules/
-.env
 utils/firebase/firebase-credentials.json
+.env

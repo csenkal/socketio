@@ -1,8 +1,8 @@
-import { surveyGetAllForUser, answerAdd, surveyGetOne} from "../controllers/surveyController.js";
+import { getSurveysByUser, getOneSurvey , addAnswer} from "../controllers/surveyController.js";
 
 export default function surveyRoutes(server) {
-    server.get("/survey/getAllForUser", surveyGetAllForUser);
-    server.post("/survey/answerAdd", answerAdd);
-    server.get("/survey/getOne/:id", surveyGetOne);
+    server.get("/survey/getAllForUser", getSurveysByUser);
+    server.post("/survey/answerAdd", addAnswer);
+    server.get("/survey/getOne/:id", getOneSurvey);
 
 }

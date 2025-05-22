@@ -14,7 +14,6 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path'
 import { initializeSocket } from "./utils/socket.js";
-//import { verifyToken, verifyTokenAndRole } from './middleware/auth.js';
 import authRoutes from "./routes/authRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
 import announcementRoutes from "./routes/announcementRoutes.js";
@@ -22,6 +21,8 @@ import connectionRoutes from "./routes/connectionRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import internshipRoutes from "./routes/internshipRoutes.js";
+import internRoutes from "./routes/internRoutes.js";
+import { sendNotification } from './controllers/notificationController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -41,7 +42,7 @@ const clientsOnline = new Set();
 // Body parser eklentisini kullanarak gelen JSON verilerini ayrıştırın
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.queryParser());
-//server.use(verifyToken)
+
 
 authRoutes(server);
 leaveRoutes(server);
@@ -50,6 +51,7 @@ connectionRoutes(server);
 profileRoutes(server);
 surveyRoutes(server);
 internshipRoutes(server);
+internRoutes(server);
 
 // serve client-side socket.io script
 server.get('/socket.io.js', restify.plugins.serveStatic({
